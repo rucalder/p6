@@ -347,6 +347,36 @@ def generate_successors(population):
     results = []
     # STUDENT Design and implement this
     # Hint: Call generate_children() on some individuals and fill up results.
+
+    # For loop iterating through len(population) / 16
+
+    # Tournament Selection
+    parent_list1 = []
+    for parent in population:
+        chosen = randrange(0,1)
+        if chosen == 1:
+            parent_list1.append(chosen)
+
+    population.remove(parent1)
+
+    parent1 = parent_list[0]
+    for parent in parent_list1:
+        if parent.fitness > parent1.fitness:
+            parent1 = parent
+
+    # Rank Selection
+    parent_list2 = sorted(population, key=Individual.fitness, reverse=True)
+    parent2 = parent_list2[0]
+
+    population.append(parent1)
+
+    child1, child2 = parent1.generate_children(parent2)
+
+    population.append(child1)
+    population.append(child2)
+
+    # Once we have the children, take bottom 1/4 of fit parents, eleminate half at random
+
     return results
 
 
