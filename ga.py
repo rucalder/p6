@@ -353,13 +353,14 @@ def generate_successors(population):
     # Tournament Selection
     parent_list1 = []
     for parent in population:
-        chosen = randrange(0,1)
+        chosen = random.randrange(0,1)
         if chosen == 1:
             parent_list1.append(chosen)
 
+    parent1 = parent_list1[0]
+
     population.remove(parent1)
 
-    parent1 = parent_list[0]
     for parent in parent_list1:
         if parent.fitness > parent1.fitness:
             parent1 = parent
