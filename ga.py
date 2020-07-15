@@ -179,12 +179,12 @@ class Individual_DE(object):
         # STUDENT Add more metrics?
         # STUDENT Improve this with any code you like
         coefficients = dict(
-            meaningfulJumpVariance=0.5,
-            negativeSpace=0.6,
-            pathPercentage=0.5,
-            emptyPercentage=0.6,
-            linearity=-0.5,
-            solvability=2.0
+            meaningfulJumpVariance=1,
+            negativeSpace=4,
+            pathPercentage=3,
+            emptyPercentage=0.8,
+            linearity=2,
+            solvability=10.0
         )
         penalties = 0
         # STUDENT For example, too many stairs are unaesthetic.  Let's penalize that
@@ -395,14 +395,15 @@ def generate_successors(population):
 
         population.remove(parent1)
 
-        # Rank Selection
+        # Random selection from top 1/3 of population
         parent_list2 = sorted(population, key=Individual.fitness, reverse=True)
-        parent2 = parent_list2[0]
+        parent_list2 = parent_list2[int(2*len(parent_list2)/3):]
+        parent2 = random.choice(parent_list2)
 
         population.append(parent1)
 
         child1 = parent1.generate_children(parent2)
-        child2 = parent1.generate_children(parent2)
+        child2 = parent2.generate_children(parent1)
 
         child_list.append(child1)
         child_list.append(child2)
