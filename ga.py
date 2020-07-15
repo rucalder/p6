@@ -46,11 +46,11 @@ class Individual_Grid(object):
         # STUDENT Modify this, and possibly add more metrics.  You can replace this with whatever code you like.
         coefficients = dict(
             meaningfulJumpVariance=0.5,
-            negativeSpace=0.6,
+            negativeSpace=5,
             pathPercentage=0.5,
             emptyPercentage=0.6,
             linearity=-0.5,
-            solvability=2.0
+            solvability=10
         )
         self._fitness = sum(map(lambda m: coefficients[m] * measurements[m],
                                 coefficients))
@@ -82,13 +82,34 @@ class Individual_Grid(object):
         # do crossover with other
         left = 1
         right = width - 1
+
         for y in range(height):
             for x in range(left, right):
                 # STUDENT Which one should you take?  Self, or other?  Why?
                 # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
-                pass
+                #print("y = " + str(y))
+                #print("x = " + str(x))
+                gene1 = self.genome[y][x]
+                gene2 = other.genome[y][x]
+
+                new = random.choice([gene1, gene2])
+                new_genome[y][x] = new
+
+
+        piped = []
+        for y in range(height):
+            for x in range(left, right):
+                if new_genome[y][x] == 'T':
+                    piped.append(x)
+                
+                if new_genome[y][x] == '|' and x not in piped:
+                    new_genome[y][x] = '-'
+
+                if new_genome[y][x] != '|' and x in piped:
+                    new_genome[y][x] = '|'
+
         # do mutation; note we're returning a one-element tuple here
-        return (Individual_Grid(new_genome),)
+        return Individual_Grid(new_genome)
 
     # Turn the genome into a level string (easy for this genome)
     def to_level(self):
@@ -348,36 +369,62 @@ def generate_successors(population):
     # STUDENT Design and implement this
     # Hint: Call generate_children() on some individuals and fill up results.
 
-    # For loop iterating through len(population) / 16
+    child_list = []
+    #print("Population in generate_successors before shuffle: " + str(population))
+    random.shuffle(population)
 
-    # Tournament Selection
-    parent_list1 = []
-    for parent in population:
-        chosen = random.randrange(0,1)
-        if chosen == 1:
-            parent_list1.append(chosen)
+    #print("Population in generate_successors after shuffle: " + str(population))
 
-    parent1 = parent_list1[0]
+    # For loop iterating through len(population) / 16, generating 1/8 new children
+    for i in range(int(len(population) / 16)):
 
-    population.remove(parent1)
+        # Tournament Selection
+        parent_list1 = []
+        for parent in population:
+            chosen = random.randrange(0,2)
+            if chosen == 1:
+                parent_list1.append(parent)
 
-    for parent in parent_list1:
-        if parent.fitness > parent1.fitness:
-            parent1 = parent
 
-    # Rank Selection
-    parent_list2 = sorted(population, key=Individual.fitness, reverse=True)
-    parent2 = parent_list2[0]
+        parent1 = random.choice(parent_list1)
+        for parent in parent_list1:
+            #print("Starting parent fitness: " + str(parent.fitness()))
+            #print("Comparison parent fitness: " + str(parent1.fitness()))
+            if parent.fitness() > parent1.fitness():
+                parent1 = parent
 
-    population.append(parent1)
+        population.remove(parent1)
 
-    child1, child2 = parent1.generate_children(parent2)
+        # Rank Selection
+        parent_list2 = sorted(population, key=Individual.fitness, reverse=True)
+        parent2 = parent_list2[0]
 
-    population.append(child1)
-    population.append(child2)
+        population.append(parent1)
 
-    # Once we have the children, take bottom 1/4 of fit parents, eleminate half at random
+        child1 = parent1.generate_children(parent2)
+        child2 = parent1.generate_children(parent2)
 
+        child_list.append(child1)
+        child_list.append(child2)
+
+    # Once we have the children, take bottom 1/4 of unfit parents, eleminate half at random
+    delete_list = sorted(population, key=Individual.fitness)
+    delete_list = delete_list[:int((len(delete_list)/4))]            # maybe +1
+
+    # population now has top 3/4 of fit parents
+    population = [i for i in population if i not in delete_list]
+
+    check = int(len(delete_list)/2)
+    for i in range(check):
+        random_parent = random.choice(delete_list)
+        delete_list.remove(random_parent)
+
+    # Both delete and child lists are an 1/8 of population, adding to be 1/4
+    # which completes the list 1/4 + 3/4 = 1
+    population.extend(delete_list)
+    population.extend(child_list)
+
+    results = population
     return results
 
 
@@ -392,8 +439,7 @@ def ga():
     with mpool.Pool(processes=os.cpu_count()) as pool:
         init_time = time.time()
         # STUDENT (Optional) change population initialization
-        population = [Individual.random_individual() if random.random() < 0.9
-                      else Individual.empty_individual()
+        population = [Individual.random_individual()
                       for _g in range(pop_limit)]
         # But leave this line alone; we have to reassign to population because we get a new population that has more cached stuff in it.
         population = pool.map(Individual.calculate_fitness,
@@ -421,6 +467,8 @@ def ga():
                 generation += 1
                 # STUDENT Determine stopping condition
                 stop_condition = False
+                if generation == 10:
+                    stop_condition = True
                 if stop_condition:
                     break
                 # STUDENT Also consider using FI-2POP as in the Sorenson & Pasquier paper
