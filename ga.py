@@ -499,7 +499,7 @@ def ga():
                 generation += 1
                 # STUDENT Determine stopping condition
                 stop_condition = False
-                if generation == 20:
+                if generation == 15:
                     stop_condition = True
                 if stop_condition:
                     break
