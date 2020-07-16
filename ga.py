@@ -45,12 +45,12 @@ class Individual_Grid(object):
         # Default fitness function: Just some arbitrary combination of a few criteria.  Is it good?  Who knows?
         # STUDENT Modify this, and possibly add more metrics.  You can replace this with whatever code you like.
         coefficients = dict(
-            meaningfulJumpVariance=0.5,
-            negativeSpace=5,
-            pathPercentage=0.5,
+            meaningfulJumpVariance=0.3,
+            negativeSpace=0.7,
+            pathPercentage=0.8,
             emptyPercentage=0.6,
-            linearity=-0.5,
-            solvability=10
+            linearity=-0.2,
+            solvability=0.9
         )
         self._fitness = sum(map(lambda m: coefficients[m] * measurements[m],
                                 coefficients))
@@ -72,7 +72,24 @@ class Individual_Grid(object):
         right = width - 1
         for y in range(height):
             for x in range(left, right):
-                pass
+                if random.random()>.9:
+                    block_type=random.randint(1,100)
+                    if block_type<=30:
+                        genome[y][x]='-'
+                    elif block_type>30 and block_type <=35:
+                        genome[y][x]='T'
+                    elif block_type>35 and block_type <=40:
+                        genome[y][x]='E'
+                    elif block_type>40 and block_type <=50:
+                        genome[y][x]='X'
+                    elif block_type>50 and block_type<= 60:
+                        genome[y][x]='M'
+                    elif block_type>60 and block_type<= 80:
+                        genome[y][x]='o'
+                    elif block_type>80 and block_type<= 90:
+                        genome[y][x]='B'
+                    else:
+                        genome[y][x]='?'
         return genome
 
     # Create zero or more children from self and other
@@ -82,6 +99,8 @@ class Individual_Grid(object):
         # do crossover with other
         left = 1
         right = width - 1
+
+        blocks= ['X', '?', 'M', 'B']
 
         for y in range(height):
             for x in range(left, right):
@@ -95,6 +114,12 @@ class Individual_Grid(object):
                 new = random.choice([gene1, gene2])
                 new_genome[y][x] = new
 
+        for y in range(height):
+            if y<height-2 and new_genome[y][0] != '-':
+                new_genome[y][0] = '-'
+
+
+        new_genome=self.mutate(new_genome)
 
         piped = []
         for y in range(height):
@@ -107,6 +132,11 @@ class Individual_Grid(object):
 
                 if new_genome[y][x] != '|' and x in piped:
                     new_genome[y][x] = '|'
+
+        if new_genome[y][x] in blocks and  new_genome[y-2][x] in blocks:
+                    new_genome[y-1][x]='-'
+                    new_genome[y-2][x]='-'
+
 
         # do mutation; note we're returning a one-element tuple here
         return Individual_Grid(new_genome)
@@ -440,7 +470,8 @@ def ga():
     with mpool.Pool(processes=os.cpu_count()) as pool:
         init_time = time.time()
         # STUDENT (Optional) change population initialization
-        population = [Individual.random_individual()
+        population = [Individual.random_individual() if random.random() < 0.9
+                        else Individual.empty_individual()
                       for _g in range(pop_limit)]
         # But leave this line alone; we have to reassign to population because we get a new population that has more cached stuff in it.
         population = pool.map(Individual.calculate_fitness,
@@ -468,7 +499,7 @@ def ga():
                 generation += 1
                 # STUDENT Determine stopping condition
                 stop_condition = False
-                if generation == 10:
+                if generation == 20:
                     stop_condition = True
                 if stop_condition:
                     break
